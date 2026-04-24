@@ -12,7 +12,8 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(`/api${endpoint}`, {
+  const baseUrl = import.meta.env.VITE_API_URL || "";
+  const response = await fetch(`${baseUrl}/api${endpoint}`, {
     ...options,
     headers,
   });
