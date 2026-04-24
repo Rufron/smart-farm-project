@@ -5,17 +5,42 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRole } from "@/components/RoleContext";
+import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
 import heroImg from "@/assets/fields-hero.jpg";
 
 const Login = () => {
   const nav = useNavigate();
-  const { setRole } = useRole();
+  const { login } = useRole();
   const [role, setLocalRole] = useState<"admin" | "agent">("admin");
+  const [email, setEmail] = useState("coord@smartseason.io");
+  const [password, setPassword] = useState("password123");
+  const [loading, setLoading] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  // Sync default emails purely for the demo UX convenience
+  const handleRoleToggle = (newRole: "admin" | "agent") => {
+    setLocalRole(newRole);
+    if (newRole === "admin") setEmail("coord@smartseason.io");
+    if (newRole === "agent") setEmail("amina@smartseason.io");
+  };
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setRole(role);
-    nav("/");
+    setLoading(true);
+    try {
+      const response = await apiFetch("/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      
+      login(response.data.token, response.data.user);
+      toast.success("Welcome to SmartSeason");
+      nav("/");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to login");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,11 +75,11 @@ const Login = () => {
           </div>
 
           <div className="grid grid-cols-2 rounded-lg border border-border bg-muted/40 p-1 text-sm">
-            <button type="button" onClick={() => setLocalRole("admin")}
+            <button type="button" onClick={() => handleRoleToggle("admin")}
               className={`py-1.5 rounded-md transition-smooth ${role === "admin" ? "bg-background shadow-soft text-foreground font-medium" : "text-muted-foreground"}`}>
               Coordinator
             </button>
-            <button type="button" onClick={() => setLocalRole("agent")}
+            <button type="button" onClick={() => handleRoleToggle("agent")}
               className={`py-1.5 rounded-md transition-smooth ${role === "agent" ? "bg-background shadow-soft text-foreground font-medium" : "text-muted-foreground"}`}>
               Field Agent
             </button>
@@ -63,23 +88,34 @@ const Login = () => {
           <div className="space-y-3">
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" defaultValue={role === "admin" ? "coord@smartseason.io" : "amina@smartseason.io"} className="mt-1.5" />
+              <Input 
+                id="email" 
+                type="email" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                className="mt-1.5" 
+              />
             </div>
             <div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="pass">Password</Label>
-                <a href="#" className="text-xs text-primary hover:underline">Forgot?</a>
               </div>
-              <Input id="pass" type="password" defaultValue="••••••••" className="mt-1.5" />
+              <Input 
+                id="pass" 
+                type="password" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                className="mt-1.5" 
+              />
             </div>
           </div>
 
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-            Sign in as {role === "admin" ? "Coordinator" : "Field Agent"}
+          <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+            {loading ? "Signing in..." : `Sign in as ${role === "admin" ? "Coordinator" : "Field Agent"}`}
           </Button>
 
           <p className="text-xs text-center text-muted-foreground">
-            Demo mode — any credentials will work.
+            Demo credentials are pre-filled.
           </p>
         </form>
       </div>

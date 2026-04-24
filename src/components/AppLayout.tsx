@@ -1,14 +1,23 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { Search, Bell, Plus } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRole } from "./RoleContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export const AppLayout = ({ children }: { children: ReactNode }) => {
-  const { role, setRole } = useRole();
+  const { role, user, setRole } = useRole();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
+  }, [user, navigate]);
+
+  if (!user) return null; // Don't render anything while redirecting
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">

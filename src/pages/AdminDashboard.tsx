@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StageBadge, StatusBadge } from "@/components/StatusBadge";
-import { ACTIVITY, FIELDS } from "@/lib/mock-data";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import { useRole } from "@/components/RoleContext";
 import heroImg from "@/assets/fields-hero.jpg";
 
 const StatCard = ({ icon: Icon, label, value, delta, tone = "primary" }: any) => (
@@ -29,13 +31,10 @@ const StatCard = ({ icon: Icon, label, value, delta, tone = "primary" }: any) =>
   </Card>
 );
 
-const StatusBar = () => {
-  const total = FIELDS.length;
-  const active = FIELDS.filter(f => f.status === "Active").length;
-  const risk = FIELDS.filter(f => f.status === "At Risk").length;
-  const done = FIELDS.filter(f => f.status === "Completed").length;
+const StatusBar = ({ dashData }: any) => {
+  const { total_fields: total, active_fields: active, at_risk_fields: risk, completed_fields: done } = dashData;
   const seg = (n: number, color: string) => (
-    <div style={{ width: `${(n / total) * 100}%` }} className={`h-full ${color} transition-smooth`} />
+    <div style={{ width: `${total ? (n / total) * 100 : 0}%` }} className={`h-full ${color} transition-smooth`} />
   );
   return (
     <Card className="border-border/60 shadow-soft">
@@ -68,22 +67,36 @@ const StatusBar = () => {
 };
 
 const AdminDashboard = () => {
-  const total = FIELDS.length;
-  const active = FIELDS.filter(f => f.status === "Active").length;
-  const risk = FIELDS.filter(f => f.status === "At Risk").length;
-  const done = FIELDS.filter(f => f.status === "Completed").length;
+  const { user } = useRole();
+  const { data: dashResponse, isLoading: dashLoading } = useQuery({
+    queryKey: ["dashboard-admin"],
+    queryFn: () => apiFetch("/dashboard/admin"),
+  });
+  
+  const { data: fieldsResponse, isLoading: fieldsLoading } = useQuery({
+    queryKey: ["fields"],
+    queryFn: () => apiFetch("/fields"),
+  });
+
+  if (dashLoading || fieldsLoading) {
+    return <div className="p-8 text-center text-muted-foreground">Loading dashboard...</div>;
+  }
+
+  const dashData = dashResponse?.data || {};
+  const fieldsData = fieldsResponse?.data || [];
+  const { total_fields, active_fields, at_risk_fields, completed_fields, recent_updates } = dashData;
 
   return (
-    <div className="space-y-8 max-w-[1400px] mx-auto">
+    <div className="space-y-8 max-w-[1400px] mx-auto animate-fade-up">
       {/* Hero */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-hero text-primary-foreground shadow-glow">
         <img src={heroImg} alt="" width={1536} height={768} className="absolute inset-0 h-full w-full object-cover opacity-25 mix-blend-overlay" />
         <div className="relative p-6 md:p-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <div className="text-xs uppercase tracking-[0.2em] text-primary-foreground/70">Season overview</div>
-            <h1 className="font-display text-3xl md:text-4xl font-semibold mt-2">Good morning, Adaeze 🌱</h1>
+            <h1 className="font-display text-3xl md:text-4xl font-semibold mt-2">Good morning, {user?.name.split(" ")[0]} 🌱</h1>
             <p className="text-primary-foreground/80 mt-1.5 max-w-lg">
-              {risk} fields need your attention today. {active} are progressing on schedule across {total} total fields.
+              {at_risk_fields} fields need your attention today. {active_fields} are progressing on schedule across {total_fields} total fields.
             </p>
           </div>
           <div className="flex gap-2">
@@ -99,33 +112,33 @@ const AdminDashboard = () => {
 
       {/* Stats */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={MapPinned} label="Total Fields" value={total} delta="+2 this month" tone="primary" />
-        <StatCard icon={Sprout} label="Active" value={active} delta="On track" tone="status-active" />
-        <StatCard icon={AlertTriangle} label="At Risk" value={risk} tone="status-risk" />
-        <StatCard icon={CheckCircle2} label="Completed" value={done} tone="status-completed" />
+        <StatCard icon={MapPinned} label="Total Fields" value={total_fields} delta="+2 this month" tone="primary" />
+        <StatCard icon={Sprout} label="Active" value={active_fields} delta="On track" tone="status-active" />
+        <StatCard icon={AlertTriangle} label="At Risk" value={at_risk_fields} tone="status-risk" />
+        <StatCard icon={CheckCircle2} label="Completed" value={completed_fields} tone="status-completed" />
       </section>
 
       {/* Status + activity */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2"><StatusBar /></div>
+        <div className="lg:col-span-2"><StatusBar dashData={dashData} /></div>
         <Card className="border-border/60 shadow-soft">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Recent activity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {ACTIVITY.slice(0, 5).map(a => (
+            {recent_updates?.map((a: any) => (
               <div key={a.id} className="flex items-start gap-3">
                 <div className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary text-xs font-semibold shrink-0">
-                  {a.who.split(" ").map(n => n[0]).join("")}
+                  {a.updated_by.name.split(" ").map((n: string) => n[0]).join("")}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm">
-                    <span className="font-medium text-foreground">{a.who}</span>{" "}
-                    <span className="text-muted-foreground">{a.action}</span>
+                    <span className="font-medium text-foreground">{a.updated_by.name}</span>{" "}
+                    <span className="text-muted-foreground">{a.notes ? "added note to" : "updated"}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground truncate">{a.target}</div>
+                  <div className="text-xs text-muted-foreground truncate">{a.field.name} → {a.stage}</div>
                 </div>
-                <div className="text-xs text-muted-foreground shrink-0">{a.time}</div>
+                <div className="text-xs text-muted-foreground shrink-0">{new Date(a.createdAt).toLocaleDateString()}</div>
               </div>
             ))}
           </CardContent>
@@ -158,17 +171,17 @@ const AdminDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {FIELDS.map(f => (
+                  {fieldsData.slice(0, 10).map((f: any) => (
                     <TableRow key={f.id} className="border-border">
                       <TableCell>
                         <div className="font-medium">{f.name}</div>
-                        <div className="text-xs text-muted-foreground">{f.id} · {f.area}</div>
+                        <div className="text-xs text-muted-foreground truncate max-w-[150px]">{f.id}</div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{f.crop}</TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">{f.agent}</TableCell>
-                      <TableCell><StageBadge stage={f.stage} /></TableCell>
+                      <TableCell className="text-muted-foreground">{f.crop_type}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{f.assigned_agent?.name || "Unassigned"}</TableCell>
+                      <TableCell><StageBadge stage={f.current_stage} /></TableCell>
                       <TableCell><StatusBadge status={f.status} /></TableCell>
-                      <TableCell className="hidden lg:table-cell text-right text-xs text-muted-foreground">{f.lastUpdated}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-right text-xs text-muted-foreground">{new Date(f.updatedAt).toLocaleDateString()}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

@@ -8,6 +8,9 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Fields from "./pages/Fields.tsx";
 import NewField from "./pages/NewField.tsx";
+import Agents from "./pages/Agents.tsx";
+import Activity from "./pages/Activity.tsx";
+import Settings from "./pages/Settings.tsx";
 import Login from "./pages/Login.tsx";
 
 const queryClient = new QueryClient();
@@ -23,6 +26,9 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/fields" element={<Fields />} />
             <Route path="/fields/new" element={<NewField />} />
+            <Route path="/agents" element={<Agents />} />
+            <Route path="/activity" element={<Activity />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/login" element={<Login />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

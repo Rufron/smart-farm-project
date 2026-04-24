@@ -102,16 +102,16 @@ export function AppSidebar() {
         {!collapsed ? (
           <div className="flex items-center gap-2.5 rounded-lg bg-sidebar-accent/60 px-2.5 py-2">
             <div className="grid h-8 w-8 place-items-center rounded-full bg-sidebar-primary/20 text-sidebar-primary text-xs font-semibold">
-              {user.name.split(" ").map(n => n[0]).join("").slice(0,2)}
+              {user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0,2) : "?"}
             </div>
             <div className="min-w-0 leading-tight">
-              <div className="truncate text-sm text-sidebar-foreground">{user.name}</div>
-              <div className="truncate text-[11px] text-sidebar-foreground/60">{user.email}</div>
+              <div className="truncate text-sm text-sidebar-foreground">{user?.name || "Guest"}</div>
+              <div className="truncate text-[11px] text-sidebar-foreground/60">{user?.email || ""}</div>
             </div>
           </div>
         ) : (
           <div className="grid h-8 w-8 place-items-center rounded-full bg-sidebar-primary/20 text-sidebar-primary text-xs font-semibold mx-auto">
-            {user.name.split(" ").map(n => n[0]).join("").slice(0,2)}
+            {user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0,2) : "?"}
           </div>
         )}
       </SidebarFooter>

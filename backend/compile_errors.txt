@@ -1,0 +1,13 @@
+src/config/db.ts(1,10): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+src/controllers/field.controller.ts(17,52): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+src/controllers/update.controller.ts(9,52): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+src/middlewares/validate.middleware.ts(2,10): error TS2724: '"zod"' has no exported member named 'AnyZodObject'. Did you mean 'ZodObject'?
+src/middlewares/validate.middleware.ts(18,23): error TS2339: Property 'errors' does not exist on type 'ZodError<unknown>'.
+src/services/dashboard.service.ts(7,39): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/services/dashboard.service.ts(13,28): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/services/dashboard.service.ts(39,39): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/services/dashboard.service.ts(41,58): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/services/field.service.ts(72,23): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/services/field.service.ts(79,23): error TS7006: Parameter 'f' implicitly has an 'any' type.

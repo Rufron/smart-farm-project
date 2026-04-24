@@ -7,21 +7,41 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Sprout } from "lucide-react";
-import { AGENTS, CROPS } from "@/lib/mock-data";
+import { CROPS } from "@/lib/mock-data";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const NewField = () => {
   const nav = useNavigate();
-  const [form, setForm] = useState({ name: "", crop: "", date: "", agent: "", area: "" });
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({ name: "", crop_type: "", planting_date: "", assigned_agent_id: "", area: "" });
+
+  const { data: agentsResponse } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => apiFetch("/users/agents"),
+  });
+  const agents = agentsResponse?.data || [];
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => apiFetch("/fields", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fields"] });
+      toast.success("Field created successfully");
+      nav("/fields");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to create field");
+    }
+  });
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.crop || !form.agent) {
+    if (!form.name || !form.crop_type || !form.assigned_agent_id || !form.planting_date) {
       toast.error("Please complete required fields");
       return;
     }
-    toast.success("Field created", { description: `${form.name} assigned to ${form.agent}` });
-    nav("/fields");
+    mutation.mutate(form);
   };
 
   return (
@@ -51,7 +71,7 @@ const NewField = () => {
 
                 <div>
                   <Label>Crop type *</Label>
-                  <Select value={form.crop} onValueChange={(v) => setForm({ ...form, crop: v })}>
+                  <Select value={form.crop_type} onValueChange={(v) => setForm({ ...form, crop_type: v })}>
                     <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select crop" /></SelectTrigger>
                     <SelectContent>
                       {CROPS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -65,23 +85,25 @@ const NewField = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="date">Planting date</Label>
-                  <Input id="date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="mt-1.5" />
+                  <Label htmlFor="date">Planting date *</Label>
+                  <Input id="date" type="date" value={form.planting_date} onChange={(e) => setForm({ ...form, planting_date: e.target.value })} className="mt-1.5" />
                 </div>
 
                 <div>
                   <Label>Assign agent *</Label>
-                  <Select value={form.agent} onValueChange={(v) => setForm({ ...form, agent: v })}>
+                  <Select value={form.assigned_agent_id} onValueChange={(v) => setForm({ ...form, assigned_agent_id: v })}>
                     <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select agent" /></SelectTrigger>
                     <SelectContent>
-                      {AGENTS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                      {agents.map((a: any) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="flex gap-2 pt-2 border-t border-border">
-                <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">Create field</Button>
+                <Button type="submit" disabled={mutation.isPending} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                  {mutation.isPending ? "Creating..." : "Create field"}
+                </Button>
                 <Button type="button" variant="ghost" onClick={() => nav(-1)}>Cancel</Button>
               </div>
             </form>
